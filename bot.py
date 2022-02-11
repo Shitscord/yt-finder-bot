@@ -2,6 +2,7 @@ import discord, tokens, ytsearch, random ,asyncio
 from discord.commands import Option
 
 bot = discord.Bot()
+client = discord.Client(activity=discord.Game(name="with slash commands"))
 
 async def videoFinder(searchMethod):
     youtube = ytsearch.youtubeSetup(tokens.YOUTUBE)

@@ -1,31 +1,32 @@
-from os import link
-from discord.ext import commands
-import discord, tokens, ytsearch, random, asyncio
+import discord, tokens, ytsearch, random ,asyncio
+from discord.commands import Option
 
-Client = discord.Client()
-client = commands.Bot(command_prefix="!")
+bot = discord.Bot()
 
-def run_coro(coro, client):
-    fut = asyncio.run_coroutine_threadsafe(coro, client.loop)
+async def videoFinder(searchMethod):
+    youtube = ytsearch.youtubeSetup(tokens.YOUTUBE)
+    if searchMethod == "word":
+        searchWord = ytsearch.mitWord()
+    elif searchMethod == "file name":
+        searchWord = ytsearch.fileExt()
+    else:
+        searchWord = ytsearch.randomWord()
+    notFound = True
+    while notFound:
+        linkList=ytsearch.idToLink(ytsearch.parseVideoData(youtube, ytsearch.youtubeSearch(youtube, searchWord)))
+        if len(linkList) != 0:
+            notFound = False
+    youtubeLink = linkList[random.randint(0,len(linkList)-1)]
+    return(youtubeLink)
 
-async def videoFinder(message, client):
-    async with message.channel.typing():
-        youtube = ytsearch.youtubeSetup(tokens.YOUTUBE)
-        notFound = True
-        while notFound:
-            linkList=ytsearch.idToLink(ytsearch.parseVideoData(youtube, ytsearch.youtubeSearch(youtube, ytsearch.randomWord())))
-            if len(linkList) != 0:
-                notFound = False
-        youtubeLink = linkList[random.randint(0,len(linkList)-1)]
-    run_coro(message.channel.send(youtubeLink), client)
+@bot.slash_command(guild_ids=None, description="Search for a random video on YouTube.")
+async def video(ctx, searchmethod: Option(str, "Choose the search method", choices=["random", "word", "file name"])):
+    await ctx.defer()
+    messageSend = str(await(videoFinder(searchmethod)))
+    await ctx.respond(messageSend)
 
-@client.event
+@bot.event
 async def on_ready():
     print("Bot Ready!")
 
-@client.event
-async def on_message(message):
-    if message.content.lower().startswith("!video"):
-        await videoFinder(message, client)
-
-client.run(tokens.DISCORD)
+bot.run(tokens.DISCORD)
